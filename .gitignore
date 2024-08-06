@@ -1,3 +1,4 @@
 ﻿wordfreq_env/
 __pycache__/
 *.pyc
+test_env/
