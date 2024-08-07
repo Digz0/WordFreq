@@ -5,12 +5,13 @@ import re
 import unicodedata
 # Add these imports at the top of the file
 import logging
+from typing import List, Tuple
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Add logging statements in the functions
-def word_rarity(word, language='en'):
+def word_rarity(word: str, language: str = 'en') -> float:
     logging.debug(f"Calculating rarity for word: {word} in language: {language}")
     """
     Calculate the rarity score of a given word.
@@ -50,7 +51,7 @@ def word_rarity(word, language='en'):
     # Return the calculated rarity score
     return max(0, min(rarity_score, 8))  # Ensure the score is between 0 and 8
 
-def analyze_rarity(text, language='en', max_length=100000):
+def analyze_rarity(text: str, language: str = 'en', max_length: int = 100000) -> Tuple[List[Tuple[str, float]], float]:
     logging.info(f"Analyzing text of length {len(text)} in language: {language}")
     """
     Analyze the rarity of words in a given text.
