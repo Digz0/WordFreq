@@ -20,19 +20,6 @@ class TestWordRarityAnalyzer(unittest.TestCase):
         self.assertGreater(word_rarity('ephemeral'), 5)
         self.assertGreater(word_rarity('serendipity'), 5)
 
-        # Test non-English words
-        if 'fr' in available_languages():
-            self.assertGreater(word_rarity('bonjour', 'fr'), 2)  # French word
-        if 'de' in available_languages():
-            self.assertGreater(word_rarity('schmetterling', 'de'), 2)  # German word
-        if 'ja' in available_languages():
-            try:
-                self.assertGreater(word_rarity('こんにちは', 'ja'), 2)  # Japanese word
-            except ModuleNotFoundError:
-                print(f"Skipping Japanese word test due to missing MeCab module on {sys.platform}")
-        else:
-            print("Skipping Japanese word test as 'ja' is not in available languages")
-
         # Test edge cases
         self.assertEqual(word_rarity(''), 8)  # Empty string
         self.assertEqual(word_rarity('thisisaverylongwordthatprobablydoesntexist'), 8)  # Very long word
@@ -42,6 +29,26 @@ class TestWordRarityAnalyzer(unittest.TestCase):
         self.assertEqual(word_rarity('123'), 8)  # Numbers
         self.assertEqual(word_rarity('!@#'), 8)  # Special characters
         self.assertGreater(word_rarity('word123'), 5)  # Combination of letters and numbers
+
+    def test_non_english_word_rarity(self):
+        test_cases = [
+            ('fr', 'bonjour', 2),
+            ('de', 'schmetterling', 2),
+            ('ja', 'こんにちは', 2),
+            # Add more languages and words as needed
+        ]
+
+        for lang, word, expected_min_rarity in test_cases:
+            with self.subTest(language=lang, word=word):
+                if lang in available_languages():
+                    try:
+                        rarity = word_rarity(word, lang)
+                        self.assertGreater(rarity, expected_min_rarity, 
+                                           f"Expected {word} in {lang} to have rarity > {expected_min_rarity}")
+                    except ImportError as e:
+                        self.skipTest(f"Skipping {lang} test due to import error: {str(e)}")
+                else:
+                    self.skipTest(f"Skipping {lang} test as it's not in available languages")
 
     def test_analyze_rarity_common_words(self):
         text = "The quick brown fox jumps over the lazy dog"
