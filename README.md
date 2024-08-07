@@ -30,12 +30,31 @@ Word Rarity Analyzer is a Python tool that calculates the rarity of words in a g
 
 ## Usage
 
-Run the script interactively:
-```
-python word_rarity_analyzer.py
-```
+You can run the script in several ways:
 
-Follow the prompts to enter your text and specify the language.
+1. Analyze a text file:
+   ```
+   python word_rarity_analyzer.py --file path/to/your/file.txt --language en
+   ```
+
+2. Interactive mode (default):
+   ```
+   python word_rarity_analyzer.py
+   ```
+   This will prompt you to enter text and use English as the default language.
+
+3. Interactive mode with a specific language:
+   ```
+   python word_rarity_analyzer.py --language fr
+   ```
+   This will prompt you to enter text and analyze it in French.
+
+### Command-line Arguments
+
+- `--file`: Path to a text file to analyze (optional)
+- `--language`: Language code for analysis (optional, default is "en" for English)
+
+Follow the prompts to enter your text if not using the file option.
 
 ## How it works
 

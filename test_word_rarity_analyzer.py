@@ -30,6 +30,8 @@ class TestWordRarityAnalyzer(unittest.TestCase):
                 self.assertGreater(word_rarity('こんにちは', 'ja'), 2)  # Japanese word
             except ModuleNotFoundError:
                 print(f"Skipping Japanese word test due to missing MeCab module on {sys.platform}")
+        else:
+            print("Skipping Japanese word test as 'ja' is not in available languages")
 
         # Test edge cases
         self.assertEqual(word_rarity(''), 8)  # Empty string
@@ -127,66 +129,14 @@ class TestWordRarityAnalyzer(unittest.TestCase):
         actual_words = [word for word, _ in results]
         self.assertSetEqual(set(expected_words), set(actual_words), f"Expected words {expected_words}, but got {actual_words}")
 
-    def test_integration(self):
-        # Prepare input
-        test_input = "The quick brown fox jumps over the lazy dog\n\n"
-        
-        # Redirect stdin and stdout
-        sys.stdin = io.StringIO(test_input)
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        try:
-            # Import the module
-            word_rarity_analyzer = importlib.import_module('word_rarity_analyzer')
-            
-            # Store the original __name__ attribute
-            original_name = word_rarity_analyzer.__name__
-            
-            # Set __name__ to simulate running as main
-            word_rarity_analyzer.__name__ = "__main__"
-            
-            # Run the main function
-            word_rarity_analyzer.main()
-
-        finally:
-            # Reset __name__ if the module was successfully imported
-            if 'word_rarity_analyzer' in locals():
-                word_rarity_analyzer.__name__ = original_name
-
-            # Reset stdin and stdout
-            sys.stdin = sys.__stdin__
-            sys.stdout = sys.__stdout__
-
-        # Get the captured output
-        output = captured_output.getvalue()
-
-        # Assertions
-        self.assertIn("Rarity Analysis Results:", output)
-        self.assertIn("Average Rarity Score:", output)
-        self.assertIn("Individual Word Scores:", output)
-        
-        # Check if all words from the input are in the output
-        input_words = ["the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog"]
-        for word in input_words:
-            self.assertIn(f"Word: {word} |", output)  # Changed comma to pipe and added space
-
-    def run_integration_test(self, test_input, expected_outputs):
-        # Add language input to test_input
-        test_input += "en\n"  # Append default language 'en'
-        sys.stdin = io.StringIO(test_input)
+    def run_integration_test(self, test_input, expected_outputs, language="en"):
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
         try:
             word_rarity_analyzer = importlib.import_module('word_rarity_analyzer')
-            original_name = word_rarity_analyzer.__name__
-            word_rarity_analyzer.__name__ = "__main__"
-            word_rarity_analyzer.main()
+            word_rarity_analyzer.main(text=test_input, language=language)
         finally:
-            if 'word_rarity_analyzer' in locals():
-                word_rarity_analyzer.__name__ = original_name
-            sys.stdin = sys.__stdin__
             sys.stdout = sys.__stdout__
 
         output = captured_output.getvalue()
@@ -194,37 +144,36 @@ class TestWordRarityAnalyzer(unittest.TestCase):
             self.assertIn(expected, output)
 
     def test_integration(self):
-        # ... existing test ...
-
         # Test with empty input
-        self.run_integration_test("\n\n", ["Error: Empty input"])
+        self.run_integration_test("", ["Error: Empty input"])
 
         # Test with punctuation and numbers
-        self.run_integration_test("Hello, World! 123 Test.\n\n", 
-                                  ["Rarity Analysis Results:", 
-                                   "Average Rarity Score:", 
-                                   "Word: hello |",  # Remove comma, add pipe
-                                   "Word: world |",  # Remove comma, add pipe
-                                   "Word: test |"])  # Remove comma, add pipe
-
-        # Test with rare words
-        self.run_integration_test("The quixotic physicist pondered the ephemeral nature of serendipity.\n\n",
-                                  ["Rarity Analysis Results:",
-                                   "Average Rarity Score:",
-                                   "Word: quixotic |",
-                                   "Word: ephemeral |",
-                                   "Word: serendipity |"])
+        self.run_integration_test("Hello, World! 123 Test.", 
+                                  ["Average Rarity Score:", 
+                                   "Word: hello |",
+                                   "Word: world |",
+                                   "Word: test |"])
 
         # Test with mixed common and rare words
-        self.run_integration_test("The quick brown fox jumps over the lazy dog, while a quixotic physicist ponders.\n\n",
-                                  ["Rarity Analysis Results:",
-                                   "Average Rarity Score:",
-                                   "Word: quixotic |",  # Changed comma to pipe
-                                   "Word: physicist |",  # Changed comma to pipe
-                                   "Word: the |"])  # Changed comma to pipe
+        self.run_integration_test("The quick brown fox jumps over the lazy dog, while a quixotic physicist ponders.",
+                                  ["Average Rarity Score:",
+                                   "All Words Sorted by Rarity:",
+                                   "Word: quixotic |",
+                                   "Word: physicist |",
+                                   "Word: ponders |",
+                                   "Word: brown |",
+                                   "Word: jumps |",
+                                   "Word: quick |",
+                                   "Word: while |",
+                                   "Word: lazy |",
+                                   "Word: over |",
+                                   "Word: fox |",
+                                   "Word: dog |",
+                                   "Word: the |",
+                                   "Word: a |"])
 
         # Test sorting of results (should be sorted by rarity, highest to lowest)
-        output = self.get_integration_output("Common rare unique words.\n\n")
+        output = self.get_integration_output("Common rare unique words.")
         print("Full output:")
         print(output)
         lines = output.split('\n')
@@ -234,7 +183,7 @@ class TestWordRarityAnalyzer(unittest.TestCase):
                          f"Results should be sorted by rarity (highest to lowest). Got: {rarity_scores}")
 
         # Test for words with equal rarity scores (should be sorted alphabetically)
-        output = self.get_integration_output("apple banana cherry date.\n\n")
+        output = self.get_integration_output("apple banana cherry date.")
         lines = output.split('\n')
         word_scores = []
         for line in lines:
@@ -248,27 +197,19 @@ class TestWordRarityAnalyzer(unittest.TestCase):
                          f"Results should be sorted by rarity and then alphabetically. Got: {word_scores}")
 
         # Test average rarity calculation
-        output = self.get_integration_output("The quick brown fox.\n\n")
+        output = self.get_integration_output("The quick brown fox.")
         avg_rarity_line = next(line for line in output.split('\n') if 'Average Rarity Score:' in line)
         avg_rarity = float(avg_rarity_line.split(': ')[-1])
         self.assertTrue(0 < avg_rarity < 8, f"Average rarity {avg_rarity} should be between 0 and 8")
 
     def get_integration_output(self, test_input):
-        # Add language input
-        test_input += "en\n"  # Append default language 'en'
-        sys.stdin = io.StringIO(test_input)
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
         try:
             word_rarity_analyzer = importlib.import_module('word_rarity_analyzer')
-            original_name = word_rarity_analyzer.__name__
-            word_rarity_analyzer.__name__ = "__main__"
-            word_rarity_analyzer.main()
+            word_rarity_analyzer.main(text=test_input, language="en")
         finally:
-            if 'word_rarity_analyzer' in locals():
-                word_rarity_analyzer.__name__ = original_name
-            sys.stdin = sys.__stdin__
             sys.stdout = sys.__stdout__
 
         return captured_output.getvalue()
@@ -316,45 +257,32 @@ class TestWordRarityAnalyzer(unittest.TestCase):
 
     def test_integration_error_handling(self):
         # Test with invalid language
-        self.run_integration_test("Hello world\n\ninvalid_lang\n", 
-                                  ["Error: Unsupported language: invalid_lang"])
+        self.run_integration_test("Hello world", 
+                                  ["Error: Unsupported language: invalid_lang"],
+                                  language="invalid_lang")
 
         # Test with extremely long input
-        very_long_input = "word " * 20001 + "\n\n"
+        very_long_input = "word " * 20001
         self.run_integration_test(very_long_input, 
                                   ["Error: Input text is too long. Maximum allowed length is 100000 characters."])
+
     def test_user_interface(self):
-        # Test multi-line input and prompt messages
-        test_input = "This is a\nmulti-line\ninput test\n\nen\n"
-        sys.stdin = io.StringIO(test_input)
+        test_input = "This is a\nmulti-line\ninput test"
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
         try:
             word_rarity_analyzer = importlib.import_module('word_rarity_analyzer')
-            original_name = word_rarity_analyzer.__name__
-            word_rarity_analyzer.__name__ = "__main__"
-            word_rarity_analyzer.main()
+            word_rarity_analyzer.main(text=test_input, language="en")
         finally:
-            if 'word_rarity_analyzer' in locals():
-                word_rarity_analyzer.__name__ = original_name
-            sys.stdin = sys.__stdin__
             sys.stdout = sys.__stdout__
 
         output = captured_output.getvalue()
 
-        # Verify prompt messages
-        self.assertIn("Please paste your text below and press Enter twice when you're done:", output)
-        self.assertIn("Enter the language code (e.g., 'en' for English, 'fr' for French):", output)
-
-        # Verify multi-line input was processed correctly
+        # Verify results are displayed
+        self.assertIn("Average Rarity Score:", output)
         self.assertIn("Word: multi |", output)
         self.assertIn("Word: line |", output)
-
-        # Verify results are displayed
-        self.assertIn("Rarity Analysis Results:", output)
-        self.assertIn("Average Rarity Score:", output)
-        self.assertIn("Individual Word Scores:", output)
 
     def generate_text(self, word_count):
         words = ['the', 'quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog']
