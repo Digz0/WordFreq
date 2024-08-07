@@ -3,14 +3,15 @@ from wordfreq import zipf_frequency, available_languages
 # Import the re module for regular expressions
 import re
 import unicodedata
+# Add these imports at the top of the file
 import logging
-import argparse
-from typing import List, Tuple
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def word_rarity(word: str, language: str = 'en') -> float:
+# Add logging statements in the functions
+def word_rarity(word, language='en'):
+    logging.debug(f"Calculating rarity for word: {word} in language: {language}")
     """
     Calculate the rarity score of a given word.
 
@@ -24,7 +25,6 @@ def word_rarity(word: str, language: str = 'en') -> float:
     Raises:
     ValueError: If the language is not supported.
     """
-    logging.debug(f"Calculating rarity for word: {word} in language: {language}")
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
     
@@ -50,7 +50,8 @@ def word_rarity(word: str, language: str = 'en') -> float:
     # Return the calculated rarity score
     return max(0, min(rarity_score, 8))  # Ensure the score is between 0 and 8
 
-def analyze_rarity(text: str, language: str = 'en', max_length: int = 100000) -> Tuple[List[Tuple[str, float]], float]:
+def analyze_rarity(text, language='en', max_length=100000):
+    logging.info(f"Analyzing text of length {len(text)} in language: {language}")
     """
     Analyze the rarity of words in a given text.
 
@@ -67,7 +68,6 @@ def analyze_rarity(text: str, language: str = 'en', max_length: int = 100000) ->
     Raises:
     ValueError: If the language is not supported or text is too long.
     """
-    logging.info(f"Analyzing text of length {len(text)} in language: {language}")
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
     
@@ -92,28 +92,42 @@ def analyze_rarity(text: str, language: str = 'en', max_length: int = 100000) ->
     return sorted_results, avg_rarity
 
 def main():
+    logging.info("Starting Word Rarity Analyzer")
     """
     Main function to run the word rarity analyzer interactively.
     Prompts user for input text and language, then displays analysis results.
     """
-    parser = argparse.ArgumentParser(description="Analyze word rarity in a given text.")
-    parser.add_argument("--file", help="Path to a text file to analyze")
-    parser.add_argument("--language", default="en", help="Language code (default: en)")
-    args = parser.parse_args()
+    # Prompt user for input
+    print("Please paste your text below and press Enter twice when you're done:")
+    # Initialize an empty list to store user input
+    user_input = []
+    # Loop to collect multi-line input
+    while True:
+        line = input()
+        if line == "":
+            break
+        user_input.append(line)
 
-    if args.file:
-        with open(args.file, 'r', encoding='utf-8') as f:
-            text = f.read()
-    else:
-        print("Please paste your text below and press Enter twice when you're done:")
-        text = "\n".join(iter(input, ""))
+    # Join the input lines into a single string
+    text_to_analyze = " ".join(user_input)
+    if not text_to_analyze.strip():
+        print("Error: Empty input")
+        return
 
-    results, avg_rarity = analyze_rarity(text, args.language)
+    print("Enter the language code (e.g., 'en' for English, 'fr' for French):")
+    language = input().strip()
 
-    print(f"\nAverage Rarity Score: {avg_rarity:.2f}")
-    print("\nTop 10 Rarest Words:")
-    for word, rarity in results[:10]:
-        print(f"Word: {word} | Rarity Score: {rarity:.2f}")
+    try:
+        results, avg_rarity = analyze_rarity(text_to_analyze, language)
+
+        print("\nRarity Analysis Results:")
+        print(f"Average Rarity Score: {avg_rarity:.2f}")
+        print("\nIndividual Word Scores:")
+        for word, rarity in results:
+            print(f"Word: {word} | Rarity Score: {rarity:.2f}")
+    except ValueError as e:
+        print(f"Error: {str(e)}")
+        return  # Exit the function after printing the error
 
 # Only run the main function if this script is run directly
 if __name__ == "__main__":
