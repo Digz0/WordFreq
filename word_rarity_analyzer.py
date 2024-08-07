@@ -1,19 +1,23 @@
 # Import the zipf_frequency function from the wordfreq library
-from wordfreq import zipf_frequency
+from wordfreq import zipf_frequency, available_languages
 # Import the re module for regular expressions
 import re
-
-# Define a function to calculate word rarity
-from wordfreq import zipf_frequency, available_languages
-import re
+import unicodedata
 
 def word_rarity(word, language='en'):
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
     
+    # Normalize Unicode characters
+    word = unicodedata.normalize('NFKC', word)
+    
     # Check if the word contains only digits
     if re.match(r'^\d+$', word):
         return 8  # Return maximum rarity for numbers
+    
+    # Very long words are likely rare
+    if len(word) > 50:
+        return 8
     
     # Get the Zipf frequency of the word
     zipf = zipf_frequency(word, language)
@@ -26,7 +30,6 @@ def word_rarity(word, language='en'):
     # Return the calculated rarity score
     return max(0, min(rarity_score, 8))  # Ensure the score is between 0 and 8
 
-# Define a function to analyze the rarity of words in a text
 def analyze_rarity(text, language='en', max_length=100000):
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
@@ -34,7 +37,11 @@ def analyze_rarity(text, language='en', max_length=100000):
     if len(text) > max_length:
         raise ValueError(f"Input text is too long. Maximum allowed length is {max_length} characters.")
     
-    words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+    # Normalize Unicode characters
+    text = unicodedata.normalize('NFKC', text)
+    
+    # Update regex to include only alphabetic words (including Unicode letters)
+    words = re.findall(r'\b[^\W\d_]+\b', text.lower(), re.UNICODE)
     word_rarity_dict = {}
     
     for word in set(words):

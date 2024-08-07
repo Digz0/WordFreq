@@ -379,5 +379,26 @@ class TestWordRarityAnalyzer(unittest.TestCase):
             
             print(f"Performance test for {size} words: {execution_time:.2f}s")
 
+    def test_edge_cases(self):
+        # Test extremely short words
+        self.assertLess(word_rarity('a'), 2, "Single letter common words should have low rarity")
+        self.assertLess(word_rarity('the'), 2, "Common words should have low rarity")
+        
+        # Test extremely long words
+        long_word = 'a' * 50
+        self.assertEqual(word_rarity(long_word), 8, "Very long words should have maximum rarity")
+        
+        # Test input with only spaces or newlines
+        results, avg_rarity = analyze_rarity("   \n\n   ")
+        self.assertEqual(len(results), 0, "Input with only spaces should return no results")
+        self.assertEqual(avg_rarity, 0, "Input with only spaces should have zero average rarity")
+        
+        # Test input with Unicode characters
+        unicode_text = "こんにちは world Здравствуй мир"
+        results, avg_rarity = analyze_rarity(unicode_text)
+        self.assertGreater(len(results), 0, "Unicode text should be analyzed")
+        self.assertTrue(any('こんにちは' in word for word, _ in results), "Japanese word should be in results")
+        self.assertTrue(any('здравствуй' in word for word, _ in results), "Russian word should be in results")
+
 if __name__ == '__main__':
     unittest.main()
