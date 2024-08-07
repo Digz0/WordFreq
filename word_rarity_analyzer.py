@@ -5,6 +5,19 @@ import re
 import unicodedata
 
 def word_rarity(word, language='en'):
+    """
+    Calculate the rarity score of a given word.
+
+    Args:
+    word (str): The word to analyze.
+    language (str): The language code (default: 'en' for English).
+
+    Returns:
+    float: A rarity score between 0 (very common) and 8 (very rare).
+
+    Raises:
+    ValueError: If the language is not supported.
+    """
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
     
@@ -31,6 +44,22 @@ def word_rarity(word, language='en'):
     return max(0, min(rarity_score, 8))  # Ensure the score is between 0 and 8
 
 def analyze_rarity(text, language='en', max_length=100000):
+    """
+    Analyze the rarity of words in a given text.
+
+    Args:
+    text (str): The text to analyze.
+    language (str): The language code (default: 'en' for English).
+    max_length (int): Maximum allowed length of input text.
+
+    Returns:
+    tuple: A tuple containing:
+        - list of tuples: (word, rarity_score) sorted by rarity (highest to lowest).
+        - float: Average rarity score of all words.
+
+    Raises:
+    ValueError: If the language is not supported or text is too long.
+    """
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
     
@@ -54,8 +83,11 @@ def analyze_rarity(text, language='en', max_length=100000):
     
     return sorted_results, avg_rarity
 
-# Wrap the main logic in a function
 def main():
+    """
+    Main function to run the word rarity analyzer interactively.
+    Prompts user for input text and language, then displays analysis results.
+    """
     # Prompt user for input
     print("Please paste your text below and press Enter twice when you're done:")
     # Initialize an empty list to store user input
