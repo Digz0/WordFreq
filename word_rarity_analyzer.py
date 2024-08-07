@@ -3,8 +3,14 @@ from wordfreq import zipf_frequency, available_languages
 # Import the re module for regular expressions
 import re
 import unicodedata
+import logging
+import argparse
+from typing import List, Tuple
 
-def word_rarity(word, language='en'):
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def word_rarity(word: str, language: str = 'en') -> float:
     """
     Calculate the rarity score of a given word.
 
@@ -18,6 +24,7 @@ def word_rarity(word, language='en'):
     Raises:
     ValueError: If the language is not supported.
     """
+    logging.debug(f"Calculating rarity for word: {word} in language: {language}")
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
     
@@ -43,7 +50,7 @@ def word_rarity(word, language='en'):
     # Return the calculated rarity score
     return max(0, min(rarity_score, 8))  # Ensure the score is between 0 and 8
 
-def analyze_rarity(text, language='en', max_length=100000):
+def analyze_rarity(text: str, language: str = 'en', max_length: int = 100000) -> Tuple[List[Tuple[str, float]], float]:
     """
     Analyze the rarity of words in a given text.
 
@@ -60,6 +67,7 @@ def analyze_rarity(text, language='en', max_length=100000):
     Raises:
     ValueError: If the language is not supported or text is too long.
     """
+    logging.info(f"Analyzing text of length {len(text)} in language: {language}")
     if language not in available_languages():
         raise ValueError(f"Unsupported language: {language}")
     
@@ -88,37 +96,24 @@ def main():
     Main function to run the word rarity analyzer interactively.
     Prompts user for input text and language, then displays analysis results.
     """
-    # Prompt user for input
-    print("Please paste your text below and press Enter twice when you're done:")
-    # Initialize an empty list to store user input
-    user_input = []
-    # Loop to collect multi-line input
-    while True:
-        line = input()
-        if line == "":
-            break
-        user_input.append(line)
+    parser = argparse.ArgumentParser(description="Analyze word rarity in a given text.")
+    parser.add_argument("--file", help="Path to a text file to analyze")
+    parser.add_argument("--language", default="en", help="Language code (default: en)")
+    args = parser.parse_args()
 
-    # Join the input lines into a single string
-    text_to_analyze = " ".join(user_input)
-    if not text_to_analyze.strip():
-        print("Error: Empty input")
-        return
+    if args.file:
+        with open(args.file, 'r', encoding='utf-8') as f:
+            text = f.read()
+    else:
+        print("Please paste your text below and press Enter twice when you're done:")
+        text = "\n".join(iter(input, ""))
 
-    print("Enter the language code (e.g., 'en' for English, 'fr' for French):")
-    language = input().strip()
+    results, avg_rarity = analyze_rarity(text, args.language)
 
-    try:
-        results, avg_rarity = analyze_rarity(text_to_analyze, language)
-
-        print("\nRarity Analysis Results:")
-        print(f"Average Rarity Score: {avg_rarity:.2f}")
-        print("\nIndividual Word Scores:")
-        for word, rarity in results:
-            print(f"Word: {word} | Rarity Score: {rarity:.2f}")
-    except ValueError as e:
-        print(f"Error: {str(e)}")
-        return  # Exit the function after printing the error
+    print(f"\nAverage Rarity Score: {avg_rarity:.2f}")
+    print("\nTop 10 Rarest Words:")
+    for word, rarity in results[:10]:
+        print(f"Word: {word} | Rarity Score: {rarity:.2f}")
 
 # Only run the main function if this script is run directly
 if __name__ == "__main__":
