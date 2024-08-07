@@ -119,19 +119,14 @@ class TestWordRarityAnalyzer(unittest.TestCase):
                 words = [word for word, _ in results]
                 self.assertEqual(len(words), len(set(words)), f"Duplicate words found in results for text: '{text}'")
 
-    def test_analyze_rarity_unique_words(self):
-        text = "Unique words only: one two three four five"
-        results, _ = analyze_rarity(text)
-        expected_words = ['unique', 'words', 'only', 'one', 'two', 'three', 'four', 'five']
-        actual_words = [word for word, _ in results]
-        self.assertSetEqual(set(expected_words), set(actual_words), f"Expected words {expected_words}, but got {actual_words}")
-
-    def test_analyze_rarity_repeated_words(self):
-        text = "Repeated words: the the the a a an an"
-        results, _ = analyze_rarity(text)
-        expected_words = ['repeated', 'words', 'the', 'a', 'an']
-        actual_words = [word for word, _ in results]
-        self.assertSetEqual(set(expected_words), set(actual_words), f"Expected words {expected_words}, but got {actual_words}")
+                if "Unique words only" in text:
+                    expected_words = ['unique', 'words', 'only', 'one', 'two', 'three', 'four', 'five']
+                    actual_words = [word for word, _ in results]
+                    self.assertSetEqual(set(expected_words), set(actual_words), f"Expected words {expected_words}, but got {actual_words}")
+                elif "Repeated words" in text:
+                    expected_words = ['repeated', 'words', 'the', 'a', 'an']
+                    actual_words = [word for word, _ in results]
+                    self.assertSetEqual(set(expected_words), set(actual_words), f"Expected words {expected_words}, but got {actual_words}")
 
     def run_integration_test(self, test_input, expected_outputs, language="en"):
         captured_output = io.StringIO()
@@ -307,7 +302,7 @@ class TestWordRarityAnalyzer(unittest.TestCase):
             text = self.generate_text(size)
             
             start_time = time.time()
-            results, avg_rarity = analyze_rarity(text)  # Remove max_length parameter
+            results, avg_rarity = analyze_rarity(text)
             end_time = time.time()
 
             execution_time = end_time - start_time
@@ -317,6 +312,10 @@ class TestWordRarityAnalyzer(unittest.TestCase):
                             f"Time taken: {execution_time:.2f}s, Max allowed: {max_time}s")
             
             print(f"Performance test for {size} words: {execution_time:.2f}s")
+            
+            # Add assertions for the results
+            self.assertGreater(len(results), 0, f"Expected non-empty results for {size} words")
+            self.assertTrue(0 < avg_rarity < 8, f"Expected average rarity between 0 and 8, got {avg_rarity}")
 
     def test_edge_cases(self):
         # Test extremely short words
