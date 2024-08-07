@@ -43,86 +43,83 @@ class TestWordRarityAnalyzer(unittest.TestCase):
         self.assertEqual(word_rarity('!@#'), 8)  # Special characters
         self.assertGreater(word_rarity('word123'), 5)  # Combination of letters and numbers
 
-    def test_analyze_rarity(self):
-        # Test with a short sentence containing common words
+    def test_analyze_rarity_common_words(self):
         text = "The quick brown fox jumps over the lazy dog"
         results, avg_rarity = analyze_rarity(text)
         self.assertEqual(len(results), 8, f"Expected 8 unique words, but got {len(results)} for text: '{text}'")
-        self.assertTrue(0 < avg_rarity < 4)  # Common words should have lower rarity
+        self.assertTrue(0 < avg_rarity < 4, "Common words should have lower rarity")
 
-        # Test with a sentence containing rare words
+    def test_analyze_rarity_rare_words(self):
         text = "The quixotic physicist pondered the ephemeral nature of serendipity"
         results, avg_rarity = analyze_rarity(text)
         self.assertTrue(len(results) > 0)
-        self.assertGreater(avg_rarity, 3)  # Rare words should have higher rarity, but be more flexible
+        self.assertGreater(avg_rarity, 3, "Rare words should have higher rarity")
         
-        # Check individual rare words
         rare_words = ['quixotic', 'ephemeral', 'serendipity']
         for word, rarity in results:
             if word in rare_words:
                 self.assertGreater(rarity, 5, f"Expected {word} to have rarity > 5, but got {rarity}")
 
-        # Test with an empty string
+    def test_analyze_rarity_empty_input(self):
         results, avg_rarity = analyze_rarity("")
         self.assertEqual(len(results), 0)
         self.assertEqual(avg_rarity, 0)
 
-        # Test with a long paragraph
+    def test_analyze_rarity_long_paragraph(self):
         text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         results, avg_rarity = analyze_rarity(text)
-        self.assertTrue(len(results) > 50)  # Should have many unique words
+        self.assertTrue(len(results) > 50, "Should have many unique words")
         self.assertTrue(0 < avg_rarity < 8)
 
-        # Test with text containing numbers and special characters
+    def test_analyze_rarity_numbers_and_special_chars(self):
         text = "Hello, World! 123 Test. @#$%^&*"
         results, avg_rarity = analyze_rarity(text)
-        self.assertEqual(len(results), 3)  # Should count 'hello', 'world', and 'test'
+        self.assertEqual(len(results), 3, "Should count 'hello', 'world', and 'test'")
         self.assertTrue(0 < avg_rarity < 8)
 
-        # Verify specific words
         words = [word.lower() for word, _ in results]
         self.assertIn('hello', words)
         self.assertIn('world', words)
         self.assertIn('test', words)
-        self.assertNotIn('123', words)  # Ensure numbers are not included
+        self.assertNotIn('123', words, "Ensure numbers are not included")
 
-        # Test with non-English text (assuming 'fr' is available)
+    def test_analyze_rarity_non_english(self):
         if 'fr' in available_languages():
             text = "Bonjour le monde"
             results, avg_rarity = analyze_rarity(text, language='fr')
             self.assertEqual(len(results), 3)
             self.assertTrue(0 < avg_rarity < 8)
 
-        # Additional checks
-        for text, expected_words in [
+    def test_analyze_rarity_additional_checks(self):
+        test_cases = [
             ("The quick brown fox jumps over the lazy dog", 8),
             ("Hello, World! This is a Test.", 6),
             ("Unique words only: one two three four five", 8),
             ("Repeated words: the the the a a an an", 5)
-        ]:
-            results, _ = analyze_rarity(text)
-            self.assertEqual(len(results), expected_words, f"Expected {expected_words} unique words, but got {len(results)} for text: '{text}'")
-            
-            # Check if results are sorted by rarity (highest to lowest)
-            rarities = [rarity for _, rarity in results]
-            self.assertEqual(rarities, sorted(rarities, reverse=True))
-            
-            # Check rarity bounds
-            for _, rarity in results:
-                self.assertTrue(0 <= rarity <= 8)
-            
-            # Check for unique words
-            words = [word for word, _ in results]
-            self.assertEqual(len(words), len(set(words)), f"Duplicate words found in results for text: '{text}'")
+        ]
 
-        # Add a specific test for this case
+        for text, expected_words in test_cases:
+            with self.subTest(text=text):
+                results, _ = analyze_rarity(text)
+                self.assertEqual(len(results), expected_words, f"Expected {expected_words} unique words, but got {len(results)} for text: '{text}'")
+                
+                rarities = [rarity for _, rarity in results]
+                self.assertEqual(rarities, sorted(rarities, reverse=True), "Results should be sorted by rarity (highest to lowest)")
+                
+                for _, rarity in results:
+                    self.assertTrue(0 <= rarity <= 8, "Rarity should be between 0 and 8")
+                
+                words = [word for word, _ in results]
+                self.assertEqual(len(words), len(set(words)), f"Duplicate words found in results for text: '{text}'")
+
+    def test_analyze_rarity_unique_words(self):
         text = "Unique words only: one two three four five"
         results, _ = analyze_rarity(text)
         expected_words = ['unique', 'words', 'only', 'one', 'two', 'three', 'four', 'five']
         actual_words = [word for word, _ in results]
         self.assertSetEqual(set(expected_words), set(actual_words), f"Expected words {expected_words}, but got {actual_words}")
 
-        # Add a specific test for repeated words
+    def test_analyze_rarity_repeated_words(self):
         text = "Repeated words: the the the a a an an"
         results, _ = analyze_rarity(text)
         expected_words = ['repeated', 'words', 'the', 'a', 'an']
@@ -153,6 +150,13 @@ class TestWordRarityAnalyzer(unittest.TestCase):
                                    "Word: hello |",
                                    "Word: world |",
                                    "Word: test |"])
+
+        # Test with rare words
+        self.run_integration_test("The quixotic physicist pondered the ephemeral nature of serendipity.",
+                                  ["Average Rarity Score:",
+                                   "Word: quixotic |",
+                                   "Word: ephemeral |",
+                                   "Word: serendipity |"])
 
         # Test with mixed common and rare words
         self.run_integration_test("The quick brown fox jumps over the lazy dog, while a quixotic physicist ponders.",
